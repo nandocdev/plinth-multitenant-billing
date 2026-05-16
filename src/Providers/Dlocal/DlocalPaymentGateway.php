@@ -35,7 +35,8 @@ class DlocalPaymentGateway implements PaymentProvider
             $headers['X-Idempotency-Key'] = $idempotencyKey;
         }
         
-        $response = $this->client->request('POST', '/payments', $payload, $headers);
+        $response = $this->client->request('POST', '/payments', $payload, $headers)
+            ->post('/payments', $payload);
             
         if ($response->successful()) {
             return [
