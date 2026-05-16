@@ -1,7 +1,7 @@
 {
     "name": "nandocdev/plinth-multitenant-billing",
     "description": "Laravel package to automate payments and subscriptions via dLocal API",
-    "type": "library",
+    "type": "package",
     "license": "MIT",
     "authors": [
         {
