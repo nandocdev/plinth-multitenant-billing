@@ -1,5 +1,5 @@
 {
-    "name": "nandocdev/dlocal-laravel",
+    "name": "plinth/laravel-multitenant-billing",
     "description": "Laravel package to automate payments and subscriptions via dLocal API",
     "type": "library",
     "license": "MIT",
@@ -11,21 +11,21 @@
     ],
     "autoload": {
         "psr-4": {
-            "Nandocdev\\Dlocal\\": "src/"
+            "Plinth\\MultiTenantBilling\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Nandocdev\\Dlocal\\Tests\\": "tests/"
+            "Plinth\\MultiTenantBilling\\Tests\\": "tests/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Nandocdev\\Dlocal\\DlocalServiceProvider"
+                "Plinth\\MultiTenantBilling\\BillingServiceProvider"
             ],
             "aliases": {
-                "Dlocal": "Nandocdev\\Dlocal\\Facades\\Dlocal"
+                "MultiTenantBilling": "Plinth\\MultiTenantBilling\\Facades\\Billing"
             }
         }
     },
