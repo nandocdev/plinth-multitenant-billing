@@ -8,10 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('dlocal_payment_methods', function (Blueprint $table) {
+        Schema::create('payment_methods', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('tenant_id')->index();
-            $table->foreignId('customer_id')->constrained('dlocal_customers')->onDelete('cascade');
+            $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
             $table->string('type'); // CARD, BANK_TRANSFER, etc.
             $table->string('token')->nullable(); // For saved cards
             $table->string('last4', 4)->nullable();
@@ -21,11 +21,11 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('dlocal_refunds', function (Blueprint $table) {
+        Schema::create('refunds', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('tenant_id')->index();
-            $table->foreignId('transaction_id')->constrained('dlocal_transactions')->onDelete('cascade');
-            $table->string('dlocal_refund_id')->unique()->nullable();
+            $table->foreignId('transaction_id')->constrained('transactions')->onDelete('cascade');
+            $table->string('provider_refund_id')->unique()->nullable();
             $table->decimal('amount', 12, 2);
             $table->string('currency', 3);
             $table->string('status')->default('PENDING');
@@ -33,11 +33,11 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('dlocal_disputes', function (Blueprint $table) {
+        Schema::create('disputes', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('tenant_id')->index();
-            $table->foreignId('transaction_id')->constrained('dlocal_transactions')->onDelete('cascade');
-            $table->string('dlocal_dispute_id')->unique()->nullable();
+            $table->foreignId('transaction_id')->constrained('transactions')->onDelete('cascade');
+            $table->string('provider_dispute_id')->unique()->nullable();
             $table->decimal('amount', 12, 2);
             $table->string('currency', 3);
             $table->string('status')->default('OPEN');
@@ -48,8 +48,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('dlocal_disputes');
-        Schema::dropIfExists('dlocal_refunds');
-        Schema::dropIfExists('dlocal_payment_methods');
+        Schema::dropIfExists('disputes');
+        Schema::dropIfExists('refunds');
+        Schema::dropIfExists('payment_methods');
     }
 };
