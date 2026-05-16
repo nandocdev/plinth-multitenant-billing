@@ -49,4 +49,22 @@ class UsageManager
     {
         return "tenant:{$tenantId}:usage:{$feature}";
     }
+
+    /**
+     * Reconstruye el caché de Redis desde el último snapshot de la base de datos.
+     * Útil tras pérdida de datos en Redis o para reconciliación periódica.
+     */
+    public function rebuildCacheFromLastSnapshot($tenantId, string $feature): void
+    {
+        $lastSnapshot = UsageSnapshot::where('tenant_id', $tenantId)
+            ->where('feature', $feature)
+            ->orderByDesc('snapshot_at')
+            ->first();
+
+        if ($lastSnapshot) {
+            Redis::set($this->getCacheKey($tenantId, $feature), $lastSnapshot->total_usage);
+        } else {
+            $this->reset($tenantId, $feature);
+        }
+    }
 }
