@@ -24,6 +24,8 @@ You can install the package via composer:
 composer require nandocdev/plinth-multitenant-billing
 ```
 
+> **Note**: If you are installing this package before its first stable release, you might need to use `composer require nandocdev/plinth-multitenant-billing:dev-main` or allow unstable packages in your `composer.json`.
+
 ## ⚙️ Configuration
 
 Publish the configuration file:
