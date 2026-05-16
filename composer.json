@@ -1,46 +1,52 @@
 {
-    "name": "nandocdev/plinth-multitenant-billing",
-    "description": "Laravel package to automate payments and subscriptions via dLocal API",
-    "type": "package",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Fernando Castillo",
-            "email": "nandocdev@example.com"
-        }
-    ],
-    "autoload": {
-        "psr-4": {
-            "Plinth\\MultiTenantBilling\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Plinth\\MultiTenantBilling\\Tests\\": "tests/"
-        }
-    },
-    "extra": {
-        "laravel": {
-            "providers": [
-                "Plinth\\MultiTenantBilling\\BillingServiceProvider"
-            ],
-            "aliases": {
-                "MultiTenantBilling": "Plinth\\MultiTenantBilling\\Facades\\Billing"
-            }
-        }
-    },
-    "require": {
-        "php": "^8.2",
-        "illuminate/support": "^13.0",
-        "illuminate/http": "^13.0"
-    },
-    "require-dev": {
-        "orchestra/testbench": "^9.17",
-        "pestphp/pest": "^4.7"
-    },
-    "config": {
-        "allow-plugins": {
-            "pestphp/pest-plugin": true
-        }
-    }
+	"name": "nandocdev/plinth-multitenant-billing",
+	"description": "Laravel package to automate payments and subscriptions via dLocal API",
+	"type": "package",
+	"license": "MIT",
+	"keywords": [
+		"billing",
+		"payments"
+	],
+	"authors": [
+		{
+			"name": "Fernando Castillo",
+			"email": "nandocdev@hotmail.com"
+		}
+	],
+	"autoload": {
+		"psr-4": {
+			"Plinth\\MultiTenantBilling\\": "src/"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"Plinth\\MultiTenantBilling\\Tests\\": "tests/"
+		}
+	},
+	"extra": {
+		"laravel": {
+			"providers": [
+				"Plinth\\MultiTenantBilling\\BillingServiceProvider"
+			],
+			"aliases": {
+				"MultiTenantBilling": "Plinth\\MultiTenantBilling\\Facades\\Billing"
+			}
+		}
+	},
+	"require": {
+		"php": "^8.2",
+		"illuminate/support": "^13.0",
+		"illuminate/http": "^13.0"
+	},
+	"require-dev": {
+		"orchestra/testbench": "^9.17",
+		"pestphp/pest": "^4.7"
+	},
+	"config": {
+		"allow-plugins": {
+			"pestphp/pest-plugin": true
+		}
+	},
+	"minimum-stability": "dev",
+	"prefer-stable": true
 }

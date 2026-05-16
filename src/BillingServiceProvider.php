@@ -17,8 +17,7 @@ use Plinth\MultiTenantBilling\Providers\Dlocal\DlocalBillingGateway;
  * Handles configuration merging, singleton registration, 
  * and publishing of assets, config, and migrations.
  */
-class BillingServiceProvider extends ServiceProvider
-{
+class BillingServiceProvider extends ServiceProvider {
     /**
      * Register any application services.
      * 
@@ -26,11 +25,11 @@ class BillingServiceProvider extends ServiceProvider
      * 
      * @return void
      */
-    public function register(): void
-    {
+    public function register(): void {
         // Merge configuration
         $this->mergeConfigFrom(
-            __DIR__.'/Core/Config/dlocal.php', 'dlocal'
+            __DIR__ . '/Core/Config/dlocal.php',
+            'dlocal'
         );
 
         // Register the main class to use with the facade and for injection
@@ -57,21 +56,23 @@ class BillingServiceProvider extends ServiceProvider
      * 
      * @return void
      */
-    public function boot(): void
-    {
+    public function boot(): void {
         // Publish configuration
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__.'/Core/Config/dlocal.php' => config_path('dlocal.php'),
+                __DIR__ . '/Core/Config/dlocal.php' => config_path('dlocal.php'),
             ], 'dlocal-config');
 
-            // Publish migrations using the recommended method
-            $this->publishesMigrations([
-                __DIR__.'/Database/migrations' => database_path('migrations'),
+            // Publish migrations using the standard publishes method
+            $this->publishes([
+                __DIR__ . '/Database/migrations' => database_path('migrations'),
             ], 'dlocal-migrations');
         }
 
+        // Make package migrations available to the application without publishing
+        $this->loadMigrationsFrom(__DIR__ . '/Database/migrations');
+
         // Load routes when available
-        $this->loadRoutesFrom(__DIR__.'/Routes/api.php');
+        $this->loadRoutesFrom(__DIR__ . '/Routes/api.php');
     }
 }
