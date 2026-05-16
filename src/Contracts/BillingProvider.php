@@ -1,8 +1,8 @@
 <?php
 
-namespace Nandocdev\Dlocal\Contracts;
+namespace Plinth\MultiTenantBilling\Contracts;
 
-use Nandocdev\Dlocal\Billing\Models\Plan;
+use Plinth\MultiTenantBilling\Billing\Models\Plan;
 
 interface BillingProvider
 {
