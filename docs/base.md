@@ -1,452 +1,538 @@
-TL;DR: separa “billing del SaaS” de “payments de tenants”. Si mezclas ambos dominios, terminarás con deuda financiera imposible de mantener.
+# opinion
 
-# Objetivo
+La dirección es correcta: estás construyendo el módulo más crítico del SaaS (`Billing + Quotas + Subscription Enforcement`) como bounded context separado. El riesgo real no es técnico; es terminar replicando Stripe/Cashier internamente con sobreingeniería innecesaria.
 
-Tu librería debe resolver 2 problemas distintos:
+---
 
-```txt id="0v4mxs"
-1. Cobrar la suscripción del tenant
-2. Procesar pagos de los clientes del tenant
+# Lo que el repo probablemente está intentando resolver
+
+Según tu arquitectura y casos de uso:
+
+* Billing multi-tenant centralizado.
+* Suscripciones SaaS.
+* Cobros por uso.
+* Cuotas.
+* Overrides.
+* Dunning.
+* Webhooks.
+* Portal financiero tenant-aware.
+* Integración con gateways externos.
+* Enforcement operacional.
+
+Eso encaja directo con:
+
+* `CU-C2.* Billing`
+* `CU-T2.* Subscription & Usage`
+* `Quota Enforcement`
+* `Over-usage Management`
+
+
+
+
+---
+
+# Lo que estás haciendo bien
+
+## 1. Billing separado del dominio del producto
+
+Correcto.
+
+El billing NO pertenece al tenant product domain.
+
+Debe vivir en:
+
+```txt
+Modules/Central/Billing
 ```
 
-NO son el mismo flujo.
+No mezcles:
+
+* facturación
+* cuotas
+* pricing
+* límites
+* invoices
+
+con:
+
+* CRM
+* WFM
+* inventario
+* tickets
+
+Eso termina en dependencias circulares infernales.
 
 ---
 
-# Nombre
+## 2. Single source of truth para quotas
 
-```txt id="hm9mtr"
-Plinth Payments
+Correcto conceptualmente.
+
+Esto:
+
+```txt
+Stripe/Cashier -> Webhook -> Sync -> Redis Cache
 ```
 
-o
+es exactamente lo que deberías hacer.
 
-```txt id="m2c90u"
-Laravel MultiTenant Billing
-```
+NO consultes Stripe:
 
----
+* por request
+* por action
+* por middleware
 
-# Arquitectura
+Eso destruye latencia y disponibilidad.
 
-```txt id="8jmkaj"
-src/
- ├── Billing/
- │    ├── SaaS subscriptions
- │    ├── Plans
- │    ├── Invoices
- │    └── Tenant lifecycle
- │
- ├── Payments/
- │    ├── Customer payments
- │    ├── Checkout
- │    ├── Transactions
- │    ├── Refunds
- │    └── Webhooks
- │
- ├── Providers/
- │    ├── Contracts
- │    ├── Dlocal/
- │    ├── Stripe/
- │    └── MercadoPago/
- │
- ├── Ledger/
- │    ├── Money movements
- │    ├── Reconciliation
- │    └── Balances
- │
- ├── Support/
- │
- └── Console/
-```
+Tu documento ya apunta correctamente a esto:
+
+> cachea los límites en Redis por tenant_id
+
+
 
 ---
 
-# Separación obligatoria
+## 3. Billing como contexto CENTRAL
 
-## Billing SaaS
+Correcto.
 
-Tu plataforma cobra al tenant.
+Muchos SaaS junior meten:
 
-Ejemplo:
-
-* plan mensual,
-* límites,
-* renovación,
-* trial.
-
-Modelo:
-
-```txt id="4zzr0f"
-Tenant -> Subscription -> Invoice -> Payment
-```
-
----
-
-## Payments
-
-El tenant cobra a SUS clientes.
-
-Ejemplo:
-
-* ecommerce,
-* consultas,
-* reservas,
-* delivery.
-
-Modelo:
-
-```txt id="ghxfx3"
-Tenant -> Customer -> Order -> Transaction
-```
-
----
-
-# Error clásico
-
-NO hagas esto:
-
-```php id="4h3l3n"
-subscriptions table
-payments table
-```
-
-Insuficiente.
-
-Porque:
-
-* no soporta refunds,
-* disputes,
-* payout tracking,
-* retries,
-* split fees,
-* taxes,
-* reconciliation.
-
----
-
-# Modelos mínimos
-
-## Billing
-
-```txt id="ktdh4h"
-plans
-subscriptions
-subscription_items
-invoices
-invoice_lines
-billing_attempts
-```
-
----
-
-## Payments
-
-```txt id="sjqlvh"
-customers
-payment_methods
-payment_intents
-transactions
-refunds
-disputes
-webhook_events
-```
-
----
-
-# Ledger interno
-
-Obligatorio.
-
-```txt id="5wzj1i"
-ledger_entries
-```
-
-Nunca dependas del PSP como source of truth.
-
----
-
-# Provider abstraction
-
-```php id="dsmqyi"
-interface PaymentProvider
-{
-    public function createCheckout(array $payload): CheckoutResponse;
-
-    public function charge(TokenizedCard $card, Money $amount);
-
-    public function refund(string $transactionId);
-
-    public function tokenize(array $cardData);
-
-    public function verifyWebhook(Request $request): bool;
-}
-```
-
----
-
-# No hagas sobreingeniería
-
-NO:
-
-* event sourcing completo,
-* CQRS innecesario,
-* microservicios,
-* Kafka,
-* saga patterns.
-
-Es pagos, no NASA.
-
-Monolito modular:
-
-* suficiente,
-* más fácil de operar,
-* menos puntos de falla.
-
----
-
-# Flujo SaaS billing
-
-```txt id="mf7xuq"
-Tenant signup
-   ↓
-Create subscription
-   ↓
-Generate invoice
-   ↓
-Create provider payment
-   ↓
-Webhook confirms
-   ↓
-Activate tenant
-```
-
----
-
-# Flujo customer payments
-
-```txt id="w8g64l"
-Customer checkout
-   ↓
-Create payment intent
-   ↓
-Redirect/provider payment
-   ↓
-Webhook
-   ↓
-Capture transaction
-   ↓
-Update order
-```
-
----
-
-# Multi-provider
-
-Necesario.
-
-Porque:
-
-* dLocal falla en algunos países,
-* Stripe no cubre todo LATAM,
-* fees cambian,
-* riesgo cambia.
-
-Tu core nunca debe depender de dLocal directamente.
-
----
-
-# Configuración tenant-aware
-
-```php id="o9od84"
-tenant_payment_providers
-- tenant_id
-- provider
-- credentials
-- status
-```
-
----
-
-# Webhooks
-
-Procesamiento async obligatorio.
-
-```txt id="wl92d6"
-HTTP -> Store raw payload -> Queue -> Process
-```
-
-Nunca proceses directamente.
-
----
-
-# Idempotencia
-
-Cada operación financiera necesita:
-
-```txt id="9r9j44"
-idempotency_key
-```
-
-o tendrás:
-
-* doble cobro,
-* doble refund,
-* corrupción financiera.
-
----
-
-# Estados
-
-No uses strings arbitrarios.
-
-```php id="y4jysd"
-enum TransactionStatus
-{
-    Pending,
-    Authorized,
-    Paid,
-    Failed,
-    Refunded,
-    Disputed,
-    Cancelled,
-}
-```
-
----
-
-# API pública
-
-```php id="4i9y70"
-Billing::subscribe($tenant, $plan);
-
-Payments::checkout($tenant, [
-   'amount' => 1000,
-   'currency' => 'USD',
-]);
-```
-
----
-
-# Features útiles
-
-## SaaS billing
-
-* trials
-* metered billing
-* quotas
-* proration
-* coupons
-* taxes
-* grace periods
-
----
-
-## Payments
-
-* hosted checkout
-* saved cards
 * subscriptions
 * invoices
-* refunds
-* split payments
-* payouts
+* payment_methods
+
+dentro del tenant DB scope.
+
+Error.
+
+Billing pertenece al owner de la cuenta SaaS.
+No al producto tenant.
 
 ---
 
-# Qué NO construir ahora
+# Problemas que probablemente tendrás
 
-No hagas:
+## 1. Estás subestimando el problema de "usage metering"
 
-* accounting completo,
-* tax engine global,
-* fraud engine,
-* AML,
-* PCI vault propio.
+Este es EL problema real.
 
-Eso destruye startups.
+Cobrar mensual fijo:
+
+* trivial
+
+Cobrar usage:
+
+* difícil
+
+Ejemplo:
+
+```txt
++1 llamada
++1 ticket
++1 factura
++1 GB
++1 minuto
+```
+
+Bajo concurrencia:
+
+```txt
+100 workers
+5 queues
+retry jobs
+events duplicados
+```
+
+Terminas con:
+
+* double billing
+* race conditions
+* cuotas inconsistentes
 
 ---
 
-# Stack Laravel
+## 2. El enforcement distribuido es el infierno
 
-```txt id="9b0fx1"
-Laravel
-Redis
-Queues
-Horizon
-PostgreSQL
-Cashier-like API
+Esto falla rápido:
+
+```php
+if ($tenant->usage < $tenant->limit) {
+   createResource();
+}
+```
+
+Bajo concurrencia:
+
+* 20 requests pasan al mismo tiempo.
+
+Resultado:
+
+* tenant sobreconsume.
+
+Necesitas:
+
+* atomic counters
+* Redis INCR
+* locks
+* eventual reconciliation
+
+---
+
+## 3. Stripe NO es tu fuente de verdad operacional
+
+Error típico:
+
+```txt
+Stripe says ACTIVE => tenant active
+```
+
+No.
+
+Tu sistema debe tener:
+
+```txt
+local subscription state
+```
+
+Porque:
+
+* webhooks llegan tarde
+* webhooks fallan
+* Stripe tiene retries
+* Cashier abstrae demasiado
+
+---
+
+# Arquitectura correcta para este repo
+
+## Estructura mínima sana
+
+```txt
+Modules/
+└── Central/
+    └── Billing/
+        ├── Actions/
+        ├── DTOs/
+        ├── Models/
+        ├── Services/
+        ├── Policies/
+        ├── Webhooks/
+        ├── Usage/
+        ├── Quotas/
+        ├── Pricing/
+        ├── Invoices/
+        ├── Dunning/
+        └── Events/
 ```
 
 ---
 
-# Inspiración correcta
+# Lo que NO deberías hacer
 
-Mira:
+## 1. NO abstraigas gateways demasiado temprano
 
-* Laravel Cashier
-* Omnipay
-* Spatie packages
+Mala idea:
 
-Pero:
-
-* Cashier está demasiado Stripe-centric.
-* Omnipay es demasiado genérico y viejo.
-
-Tu ventaja:
-
-```txt id="75hgm7"
-tenant-aware + multi-provider + LATAM-first
+```php
+PaymentGatewayInterface
+StripeGateway
+DLocalGateway
+PayPalGateway
+MercadoPagoGateway
 ```
+
+No necesitas eso todavía.
+
+Porque:
+
+* Stripe domina el modelo conceptual.
+* Los otros gateways NO tienen features equivalentes.
+* Terminas diseñando el "least common denominator".
+
+Haz esto:
+
+```txt
+Stripe first-class citizen
+```
+
+y luego adaptadores específicos.
 
 ---
 
-# Decisión importante
+## 2. NO construyas tu propio Cashier
 
-## Hosted checkout primero
-
-No captures tarjetas directamente.
+Error clásico.
 
 Usa:
 
-* dLocal checkout,
-* Stripe Checkout,
-* MercadoPago Checkout Pro.
+* Cashier para subscriptions base.
+* Tu dominio encima.
 
-Menos:
+NO reemplaces:
 
-* PCI,
-* fraude,
-* soporte infernal.
+* invoices
+* subscription sync
+* payment methods
 
----
-
-# MVP realista
-
-## v1
-
-* SaaS subscriptions
-* Hosted checkout
-* Webhooks
-* One-time payments
-* Refunds
-* dLocal provider
+innecesariamente.
 
 ---
 
-## v2
+## 3. NO metas cuotas dentro del middleware HTTP únicamente
 
-* recurring
-* multi-provider
-* saved payment methods
-* payouts
+Muchos checks ocurren:
+
+* queues
+* cron
+* imports
+* APIs
+* webhooks
+* workers
+
+Necesitas enforcement en:
+
+* Actions
+* domain services
+
+No solo middleware.
 
 ---
 
-## v3
+# Diseño recomendado
 
-* split payments
-* marketplace mode
-* reconciliation engine
-* analytics
+## Separa 4 conceptos
+
+Muchos sistemas los mezclan.
+
+---
+
+## A. Billing
+
+Dinero.
+
+```txt
+plans
+subscriptions
+payments
+invoices
+taxes
+refunds
+```
+
+---
+
+## B. Usage Metering
+
+Eventos consumibles.
+
+```txt
+api_calls
+storage
+users
+tickets
+minutes
+```
+
+---
+
+## C. Quotas
+
+Restricciones operacionales.
+
+```txt
+max_users
+max_storage
+max_projects
+```
+
+---
+
+## D. Entitlements
+
+Features habilitados.
+
+```txt
+can_export
+has_sso
+has_api
+has_ai
+```
+
+---
+
+# Modelo correcto
+
+## NO hagas esto
+
+```php
+plans:
+- users_limit
+- storage_limit
+- has_sso
+- has_api
+```
+
+Eso explota cuando:
+
+* agregas addons
+* promociones
+* overrides
+* grandfathered plans
+
+---
+
+## Haz esto
+
+```txt
+plans
+plan_features
+tenant_entitlements
+tenant_quotas
+usage_counters
+```
+
+Separados.
+
+---
+
+# Tu mayor riesgo técnico
+
+## Leakage multi-tenant en billing
+
+Billing central tiene acceso global.
+
+Si mezclas:
+
+* tenant context
+* central context
+
+vas a terminar con:
+
+* cross-tenant leakage
+* invoices incorrectas
+* métricas corruptas
+
+---
+
+# Lo que implementaría primero
+
+Orden realista.
+
+## Fase 1
+
+* Plans
+* Subscriptions
+* Stripe Checkout
+* Cashier
+* Tenant subscription sync
+
+---
+
+## Fase 2
+
+* Quotas cacheadas en Redis
+* Hard limit enforcement
+* Usage counters
+
+---
+
+## Fase 3
+
+* Metered billing
+* Overage billing
+* Credits
+* Dunning
+
+---
+
+## Fase 4
+
+* Multi-gateway
+* Tax engines
+* Regional payment providers
+
+---
+
+# Diseño de quotas recomendado
+
+## Redis como runtime source
+
+```txt
+tenant:{id}:quotas
+tenant:{id}:usage
+```
+
+Nunca:
+
+* recalcular desde DB por request
+* contar tablas gigantes
+
+---
+
+## Reconciliación async
+
+Necesitas jobs:
+
+```txt
+RebuildTenantUsageSnapshot
+```
+
+porque Redis:
+
+* se corrompe
+* expira
+* pierde sincronía
+
+---
+
+# Lo más importante
+
+## Billing NO es un CRUD
+
+Es un sistema distribuido.
+
+Problemas reales:
+
+* idempotencia
+* retries
+* race conditions
+* eventos fuera de orden
+* eventual consistency
+* double charge
+* webhook replay
+* usage reconciliation
+
+Si el repo modela eso:
+
+* va bien.
+
+Si solo modela:
+
+* plans
+* subscriptions
+* invoices
+
+entonces todavía estás construyendo dashboard CRUD disfrazado de billing engine.
+
+---
+
+# Recomendación final
+
+Tu stack actual tiene sentido:
+
+* Laravel
+* Cashier
+* Redis
+* PostgreSQL
+* stancl/tenancy
+
+
+
+Pero el punto crítico será:
+
+```txt
+Usage Metering + Quota Enforcement
+```
+
+Ahí es donde casi todos los boilerplates SaaS fallan.
