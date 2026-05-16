@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Plinth\MultiTenantBilling\Tests;
 
 use Orchestra\Testbench\TestCase as Orchestra;
-use Plinth\MultiTenantBilling\DlocalServiceProvider;
+use Plinth\MultiTenantBilling\BillingServiceProvider;
 
 class TestCase extends Orchestra
 {
     protected function getPackageProviders($app)
     {
         return [
-            DlocalServiceProvider::class,
+            BillingServiceProvider::class,
         ];
     }
     
@@ -33,10 +33,10 @@ class TestCase extends Orchestra
         ]);
         
         // Run package migrations
-        $migration1 = include __DIR__.'/../src/Database/migrations/2026_05_16_000001_create_dlocal_billing_tables.php';
+        $migration1 = include __DIR__.'/../src/Database/migrations/2026_05_16_000001_create_billing_tables.php';
         $migration1->up();
         
-        $migration2 = include __DIR__.'/../src/Database/migrations/2026_05_16_000002_create_dlocal_payments_tables.php';
+        $migration2 = include __DIR__.'/../src/Database/migrations/2026_05_16_000002_create_payments_tables.php';
         $migration2->up();
         
         $migration3 = include __DIR__.'/../src/Database/migrations/2026_05_16_000003_create_ledger_entries_table.php';
