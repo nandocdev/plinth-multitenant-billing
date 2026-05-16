@@ -1,0 +1,46 @@
+{
+    "name": "nandocdev/dlocal-laravel",
+    "description": "Laravel package to automate payments and subscriptions via dLocal API",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Fernando Castillo",
+            "email": "nandocdev@example.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Nandocdev\\Dlocal\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Nandocdev\\Dlocal\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Nandocdev\\Dlocal\\DlocalServiceProvider"
+            ],
+            "aliases": {
+                "Dlocal": "Nandocdev\\Dlocal\\Facades\\Dlocal"
+            }
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^13.0",
+        "illuminate/http": "^13.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.17",
+        "pestphp/pest": "^4.7"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}
