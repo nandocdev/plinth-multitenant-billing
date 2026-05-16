@@ -21,7 +21,7 @@ A robust, provider-agnostic multi-tenant billing and payment orchestration frame
 You can install the package via composer:
 
 ```bash
-composer require plinth/laravel-multitenant-billing
+composer require nandocdev/plinth-multitenant-billing
 ```
 
 ## ⚙️ Configuration
