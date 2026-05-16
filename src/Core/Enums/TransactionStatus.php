@@ -1,6 +1,6 @@
 <?php
 
-namespace Nandocdev\Dlocal\Core\Enums;
+namespace Plinth\MultiTenantBilling\Core\Enums;
 
 enum TransactionStatus: string
 {

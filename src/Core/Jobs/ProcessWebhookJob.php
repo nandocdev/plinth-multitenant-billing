@@ -1,14 +1,14 @@
 <?php
 
-namespace Nandocdev\Dlocal\Core\Jobs;
+namespace Plinth\MultiTenantBilling\Core\Jobs;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Nandocdev\Dlocal\Core\Models\WebhookCall;
-use Nandocdev\Dlocal\Payments\Services\TransactionService;
+use Plinth\MultiTenantBilling\Core\Models\WebhookCall;
+use Plinth\MultiTenantBilling\Payments\Services\TransactionService;
 use Exception;
 
 class ProcessWebhookJob implements ShouldQueue
