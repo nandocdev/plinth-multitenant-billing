@@ -1,11 +1,11 @@
 <?php
 
-namespace Nandocdev\Dlocal\Payments\Services;
+namespace Plinth\MultiTenantBilling\Payments\Services;
 
 use Illuminate\Support\Facades\DB;
-use Nandocdev\Dlocal\Payments\Models\Transaction;
-use Nandocdev\Dlocal\Core\Models\LedgerEntry;
-use Nandocdev\Dlocal\Core\Enums\TransactionStatus;
+use Plinth\MultiTenantBilling\Payments\Models\Transaction;
+use Plinth\MultiTenantBilling\Core\Models\LedgerEntry;
+use Plinth\MultiTenantBilling\Core\Enums\TransactionStatus;
 
 class TransactionService
 {
@@ -16,15 +16,15 @@ class TransactionService
      * - Actualiza el modelo Transaction
      * - Crea un registro append-only en LedgerEntry
      */
-    public function handleWebhook(string $dlocalId, string $status, array $payload): void
+    public function handleWebhook(string $providerId, string $status, array $payload): void
     {
         $statusEnum = TransactionStatus::tryFrom($status);
         if (!$statusEnum) {
             return;
         }
 
-        DB::transaction(function () use ($dlocalId, $statusEnum, $payload) {
-            $transaction = Transaction::where('dlocal_id', $dlocalId)->lockForUpdate()->first();
+        DB::transaction(function () use ($providerId, $statusEnum, $payload) {
+            $transaction = Transaction::where('provider_id', $providerId)->lockForUpdate()->first();
             
             if (!$transaction) {
                 return;

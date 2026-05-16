@@ -1,12 +1,12 @@
 <?php
 
-namespace Nandocdev\Dlocal\Core\Models;
+namespace Plinth\MultiTenantBilling\Core\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
 class WebhookCall extends Model
 {
-    protected $table = 'dlocal_webhook_calls';
+    protected $table = 'webhook_calls';
 
     protected $fillable = [
         'payload',

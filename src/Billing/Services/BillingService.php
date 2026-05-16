@@ -1,10 +1,10 @@
 <?php
 
-namespace Nandocdev\Dlocal\Billing\Services;
+namespace Plinth\MultiTenantBilling\Billing\Services;
 
-use Nandocdev\Dlocal\Contracts\BillingProvider;
-use Nandocdev\Dlocal\Billing\Models\Plan;
-use Nandocdev\Dlocal\Billing\Models\Subscription;
+use Plinth\MultiTenantBilling\Contracts\BillingProvider;
+use Plinth\MultiTenantBilling\Billing\Models\Plan;
+use Plinth\MultiTenantBilling\Billing\Models\Subscription;
 
 class BillingService
 {
@@ -17,7 +17,7 @@ class BillingService
         return Subscription::create([
             'tenant_id' => $tenantId,
             'plan_id' => $plan->id,
-            'dlocal_subscription_id' => $response['subscription_id'],
+            'provider_subscription_id' => $response['subscription_id'],
             'status' => $response['status'],
         ]);
     }

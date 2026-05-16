@@ -1,10 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Http;
-use Nandocdev\Dlocal\Payments\Services\PaymentProcessor;
-use Nandocdev\Dlocal\Payments\Models\Customer;
-use Nandocdev\Dlocal\Payments\Models\Order;
-use Nandocdev\Dlocal\Core\Enums\TransactionStatus;
+use Plinth\MultiTenantBilling\Payments\Services\PaymentProcessor;
+use Plinth\MultiTenantBilling\Payments\Models\Customer;
+use Plinth\MultiTenantBilling\Payments\Models\Order;
+use Plinth\MultiTenantBilling\Core\Enums\TransactionStatus;
 
 it('creates a payment correctly', function () {
     Http::fake([
@@ -18,6 +18,6 @@ it('creates a payment correctly', function () {
     
     $transaction = $processor->createPayin($order, ['type' => 'CARD']);
     
-    expect($transaction->dlocal_id)->toBe('tx_123')
+    expect($transaction->provider_id)->toBe('tx_123')
         ->and($transaction->status)->toBe(TransactionStatus::PENDING);
 });

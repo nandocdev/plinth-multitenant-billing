@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Nandocdev\Dlocal\Tests;
+namespace Plinth\MultiTenantBilling\Tests;
 
 use Orchestra\Testbench\TestCase as Orchestra;
-use Nandocdev\Dlocal\DlocalServiceProvider;
+use Plinth\MultiTenantBilling\DlocalServiceProvider;
 
 class TestCase extends Orchestra
 {
@@ -39,10 +39,10 @@ class TestCase extends Orchestra
         $migration2 = include __DIR__.'/../src/Database/migrations/2026_05_16_000002_create_dlocal_payments_tables.php';
         $migration2->up();
         
-        $migration3 = include __DIR__.'/../src/Database/migrations/2026_05_16_000003_create_dlocal_ledger_entries_table.php';
+        $migration3 = include __DIR__.'/../src/Database/migrations/2026_05_16_000003_create_ledger_entries_table.php';
         $migration3->up();
         
-        $migration4 = include __DIR__.'/../src/Database/migrations/2026_05_16_000004_create_dlocal_webhook_calls_table.php';
+        $migration4 = include __DIR__.'/../src/Database/migrations/2026_05_16_000004_create_webhook_calls_table.php';
         $migration4->up();
         
         $migration5 = include __DIR__.'/../src/Database/migrations/2026_05_16_000005_create_additional_billing_tables.php';

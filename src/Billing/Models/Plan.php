@@ -1,11 +1,11 @@
 <?php
 
-namespace Nandocdev\Dlocal\Billing\Models;
+namespace Plinth\MultiTenantBilling\Billing\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
 class Plan extends Model
 {
-    protected $table = 'dlocal_plans';
-    protected $fillable = ['dlocal_plan_id', 'name', 'currency', 'amount', 'interval', 'interval_count'];
+    protected $table = 'plans';
+    protected $fillable = ['provider_plan_id', 'name', 'currency', 'amount', 'interval', 'interval_count'];
 }

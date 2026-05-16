@@ -1,13 +1,13 @@
 <?php
 
-namespace Nandocdev\Dlocal\Core\Models;
+namespace Plinth\MultiTenantBilling\Core\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class LedgerEntry extends Model
 {
-    protected $table = 'dlocal_ledger_entries';
+    protected $table = 'ledger_entries';
 
     protected $fillable = [
         'tenant_id',

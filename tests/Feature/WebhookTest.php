@@ -2,12 +2,12 @@
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
-use Nandocdev\Dlocal\Core\Models\WebhookCall;
-use Nandocdev\Dlocal\Core\Jobs\ProcessWebhookJob;
-use Nandocdev\Dlocal\Payments\Models\Customer;
-use Nandocdev\Dlocal\Payments\Models\Order;
-use Nandocdev\Dlocal\Payments\Models\Transaction;
-use Nandocdev\Dlocal\Core\Enums\TransactionStatus;
+use Plinth\MultiTenantBilling\Core\Models\WebhookCall;
+use Plinth\MultiTenantBilling\Core\Jobs\ProcessWebhookJob;
+use Plinth\MultiTenantBilling\Payments\Models\Customer;
+use Plinth\MultiTenantBilling\Payments\Models\Order;
+use Plinth\MultiTenantBilling\Payments\Models\Transaction;
+use Plinth\MultiTenantBilling\Core\Enums\TransactionStatus;
 
 it('rejects webhooks with invalid signatures', function () {
     Log::shouldReceive('warning')->once();
@@ -56,7 +56,7 @@ it('processes the job asynchronously', function () {
     $transaction = Transaction::create([
         'tenant_id' => 1,
         'order_id' => $order->id,
-        'dlocal_id' => 'tx_123',
+        'provider_id' => 'tx_123',
         'amount' => 100.00,
         'currency' => 'USD',
         'country' => 'US',
@@ -70,11 +70,11 @@ it('processes the job asynchronously', function () {
     ]);
     
     $job = new ProcessWebhookJob($webhookCall);
-    $job->handle(app(\Nandocdev\Dlocal\Payments\Services\TransactionService::class));
+    $job->handle(app(\Plinth\MultiTenantBilling\Payments\Services\TransactionService::class));
     
     expect($transaction->fresh()->status)->toBe(TransactionStatus::PAID);
     
-    $ledger = \Nandocdev\Dlocal\Core\Models\LedgerEntry::where('reference_id', $transaction->id)->first();
+    $ledger = \Plinth\MultiTenantBilling\Core\Models\LedgerEntry::where('reference_id', $transaction->id)->first();
     expect($ledger)->not->toBeNull()
         ->and($ledger->type)->toBe('CREDIT');
         

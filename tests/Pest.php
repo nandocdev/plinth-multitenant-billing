@@ -1,5 +1,5 @@
 <?php
 
-use Nandocdev\Dlocal\Tests\TestCase;
+use Plinth\MultiTenantBilling\Tests\TestCase;
 
 uses(TestCase::class)->in(__DIR__);

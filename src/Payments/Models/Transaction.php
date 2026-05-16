@@ -1,17 +1,17 @@
 <?php
 
-namespace Nandocdev\Dlocal\Payments\Models;
+namespace Plinth\MultiTenantBilling\Payments\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
 class Transaction extends Model
 {
-    protected $table = 'dlocal_transactions';
+    protected $table = 'transactions';
 
     protected $fillable = [
         'tenant_id',
         'order_id',
-        'dlocal_id',
+        'provider_id',
         'amount',
         'currency',
         'country',
@@ -23,6 +23,6 @@ class Transaction extends Model
     protected $casts = [
         'last_webhook_payload' => 'array',
         'amount' => 'decimal:2',
-        'status' => \Nandocdev\Dlocal\Core\Enums\TransactionStatus::class,
+        'status' => \Plinth\MultiTenantBilling\Core\Enums\TransactionStatus::class,
     ];
 }

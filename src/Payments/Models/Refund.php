@@ -1,14 +1,14 @@
 <?php
 
-namespace Nandocdev\Dlocal\Payments\Models;
+namespace Plinth\MultiTenantBilling\Payments\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
 class Refund extends Model
 {
-    protected $table = 'dlocal_refunds';
+    protected $table = 'refunds';
     protected $fillable = [
-        'tenant_id', 'transaction_id', 'dlocal_refund_id', 
+        'tenant_id', 'transaction_id', 'provider_refund_id', 
         'amount', 'currency', 'status', 'reason'
     ];
 

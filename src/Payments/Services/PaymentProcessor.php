@@ -1,10 +1,10 @@
 <?php
 
-namespace Nandocdev\Dlocal\Payments\Services;
+namespace Plinth\MultiTenantBilling\Payments\Services;
 
-use Nandocdev\Dlocal\Contracts\PaymentProvider;
-use Nandocdev\Dlocal\Payments\Models\Order;
-use Nandocdev\Dlocal\Payments\Models\Transaction;
+use Plinth\MultiTenantBilling\Contracts\PaymentProvider;
+use Plinth\MultiTenantBilling\Payments\Models\Order;
+use Plinth\MultiTenantBilling\Payments\Models\Transaction;
 
 class PaymentProcessor
 {
@@ -18,7 +18,7 @@ class PaymentProcessor
         return Transaction::create([
             'tenant_id' => $order->tenant_id,
             'order_id' => $order->id,
-            'dlocal_id' => $response['transaction_id'],
+            'provider_id' => $response['transaction_id'],
             'amount' => $order->amount,
             'currency' => $order->currency,
             'country' => 'US', // default
