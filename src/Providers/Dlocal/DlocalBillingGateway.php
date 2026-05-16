@@ -1,10 +1,10 @@
 <?php
 
-namespace Nandocdev\Dlocal\Core\Gateways;
+namespace Plinth\MultiTenantBilling\Providers\Dlocal;
 
-use Nandocdev\Dlocal\Contracts\BillingProvider;
-use Nandocdev\Dlocal\Core\Client\DlocalClient;
-use Nandocdev\Dlocal\Billing\Models\Plan;
+use Plinth\MultiTenantBilling\Contracts\BillingProvider;
+use Plinth\MultiTenantBilling\Core\Client\DlocalClient;
+use Plinth\MultiTenantBilling\Billing\Models\Plan;
 use Exception;
 
 class DlocalBillingGateway implements BillingProvider
@@ -14,7 +14,7 @@ class DlocalBillingGateway implements BillingProvider
     public function createSubscription(Plan $plan, array $payerData): array
     {
         $payload = [
-             'plan_id' => $plan->dlocal_plan_id,
+             'plan_id' => $plan->provider_plan_id,
              'payer' => $payerData
         ];
 
