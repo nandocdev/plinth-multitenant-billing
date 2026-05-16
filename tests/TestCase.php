@@ -50,5 +50,11 @@ class TestCase extends Orchestra
         
         $migration6 = include __DIR__.'/../src/Database/migrations/2026_05_16_000006_create_additional_payments_tables.php';
         $migration6->up();
+
+        $migration7 = include __DIR__.'/../src/Database/migrations/2026_05_16_000007_create_tenant_payment_providers_table.php';
+        $migration7->up();
+
+        $migration8 = include __DIR__.'/../src/Database/migrations/2026_05_16_134351_create_usage_snapshots_table.php';
+        $migration8->up();
     }
 }

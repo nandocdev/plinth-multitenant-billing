@@ -3,6 +3,7 @@
 namespace Plinth\MultiTenantBilling\Billing\Quotas;
 
 use Plinth\MultiTenantBilling\Billing\Usage\UsageManager;
+use Plinth\MultiTenantBilling\Billing\Exceptions\QuotaExceededException;
 use Illuminate\Support\Facades\Redis;
 
 class QuotaEnforcer
@@ -10,12 +11,39 @@ class QuotaEnforcer
     public function __construct(protected UsageManager $usage) {}
 
     /**
-     * Verifica si un tenant tiene cuota disponible para una feature.
+     * Consume una cantidad de cuota de forma atómica.
+     * Implementa el patrón Increment-then-Check para evitar race conditions.
      *
      * @param mixed $tenantId
      * @param string $feature
      * @param int $required
-     * @return bool
+     * @return int Nuevo valor de uso
+     * 
+     * @throws QuotaExceededException
+     */
+    public function consume($tenantId, string $feature, int $required = 1): int
+    {
+        $limit = $this->getLimit($tenantId, $feature);
+
+        // Caso ILIMITADO: Solo incrementamos y retornamos
+        if ($limit === -1) {
+            return $this->usage->increment($tenantId, $feature, $required);
+        }
+
+        // Incrementamos primero de forma atómica
+        $newUsage = $this->usage->increment($tenantId, $feature, $required);
+
+        // Si excedemos el límite, revertimos y lanzamos excepción
+        if ($newUsage > $limit) {
+            $this->usage->increment($tenantId, $feature, -$required); // Rollback atómico
+            throw QuotaExceededException::forFeature($feature, $limit);
+        }
+
+        return $newUsage;
+    }
+
+    /**
+     * Verifica si un tenant tiene cuota disponible (No atómico, solo para UI/Consultas).
      */
     public function canConsume($tenantId, string $feature, int $required = 1): bool
     {
