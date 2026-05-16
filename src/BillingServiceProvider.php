@@ -29,16 +29,16 @@ class BillingServiceProvider extends ServiceProvider {
         // Merge configuration
         $this->mergeConfigFrom(
             __DIR__ . '/Core/Config/dlocal.php',
-            'dlocal'
+            'billing'
         );
 
         // Register the main class to use with the facade and for injection
         $this->app->singleton(DlocalClient::class, function ($app) {
             return new DlocalClient(
-                config('dlocal.login', ''),
-                config('dlocal.trans_key', ''),
-                config('dlocal.secret_key', ''),
-                config('dlocal.environment', 'sandbox')
+                config('billing.login', ''),
+                config('billing.trans_key', ''),
+                config('billing.secret_key', ''),
+                config('billing.environment', 'sandbox')
             );
         });
 
@@ -60,13 +60,13 @@ class BillingServiceProvider extends ServiceProvider {
         // Publish configuration
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/Core/Config/dlocal.php' => config_path('dlocal.php'),
-            ], 'dlocal-config');
+                __DIR__ . '/Core/Config/dlocal.php' => config_path('billing.php'),
+            ], 'billing-config');
 
             // Publish migrations using the standard publishes method
             $this->publishes([
                 __DIR__ . '/Database/migrations' => database_path('migrations'),
-            ], 'dlocal-migrations');
+            ], 'billing-migrations');
         }
 
         // Make package migrations available to the application without publishing
