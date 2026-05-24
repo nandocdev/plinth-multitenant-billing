@@ -5,11 +5,7 @@ declare(strict_types=1);
 namespace Plinth\MultiTenantBilling;
 
 use Illuminate\Support\ServiceProvider;
-use Plinth\MultiTenantBilling\Core\Client\DlocalClient;
-use Plinth\MultiTenantBilling\Contracts\PaymentProvider;
-use Plinth\MultiTenantBilling\Contracts\BillingProvider;
-use Plinth\MultiTenantBilling\Providers\Dlocal\DlocalPaymentGateway;
-use Plinth\MultiTenantBilling\Providers\Dlocal\DlocalBillingGateway;
+use Plinth\MultiTenantBilling\Core\Factories\PaymentProviderFactory;
 
 /**
  * Service provider for the Multi-Tenant Billing package.
@@ -21,7 +17,7 @@ class BillingServiceProvider extends ServiceProvider {
     /**
      * Register any application services.
      * 
-     * Merges package configuration and registers the DlocalClient singleton.
+     * Merges package configuration and registers the PaymentProviderFactory.
      * 
      * @return void
      */
@@ -32,21 +28,10 @@ class BillingServiceProvider extends ServiceProvider {
             'billing'
         );
 
-        // Register the main class to use with the facade and for injection
-        $this->app->singleton(DlocalClient::class, function ($app) {
-            return new DlocalClient(
-                config('billing.login', ''),
-                config('billing.trans_key', ''),
-                config('billing.secret_key', ''),
-                config('billing.environment', 'sandbox')
-            );
+        // Register the Factory as a singleton
+        $this->app->singleton(PaymentProviderFactory::class, function ($app) {
+            return new PaymentProviderFactory();
         });
-
-        $this->app->alias(DlocalClient::class, 'billing');
-
-        // Bind interfaces to Gateway implementations
-        $this->app->bind(PaymentProvider::class, DlocalPaymentGateway::class);
-        $this->app->bind(BillingProvider::class, DlocalBillingGateway::class);
     }
 
     /**

@@ -10,7 +10,14 @@ use Exception;
 
 class DlocalPaymentGateway implements PaymentProvider
 {
-    public function __construct(protected DlocalClient $client) {}
+    protected string $webhookSecret;
+
+    public function __construct(
+        protected DlocalClient $client,
+        array $config = []
+    ) {
+        $this->webhookSecret = $config['webhook_secret'] ?? $config['secret_key'] ?? '';
+    }
 
     public function createCheckout(array $payload): array
     {
@@ -69,13 +76,12 @@ class DlocalPaymentGateway implements PaymentProvider
     {
         $payload = $request->getContent();
         $signature = $request->header('Authorization');
-        $secret = config('dlocal.webhook_secret');
 
-        if (empty($secret) || empty($signature)) {
+        if (empty($this->webhookSecret) || empty($signature)) {
             return false;
         }
 
-        $expectedSignature = hash_hmac('sha256', $payload, $secret);
+        $expectedSignature = hash_hmac('sha256', $payload, $this->webhookSecret);
         return str_contains($signature, $expectedSignature);
     }
 }
