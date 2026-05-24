@@ -1,5 +1,7 @@
 # Plinth: Multi-Tenant Billing & Payment Orchestration
 
+![Plinth Banner](docs/img/banner.png)
+
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/plinth/laravel-multitenant-billing.svg?style=flat-square)](https://packagist.org/packages/plinth/laravel-multitenant-billing)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
