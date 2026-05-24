@@ -11,6 +11,8 @@ use Plinth\MultiTenantBilling\Providers\Stripe\StripePaymentGateway;
 use Plinth\MultiTenantBilling\Providers\Stripe\StripeBillingGateway;
 use Plinth\MultiTenantBilling\Providers\Dlocal\DlocalPaymentGateway;
 use Plinth\MultiTenantBilling\Providers\Dlocal\DlocalBillingGateway;
+use Plinth\MultiTenantBilling\Core\Client\PagueloFacilClient;
+use Plinth\MultiTenantBilling\Providers\PagueloFacil\PagueloFacilPaymentGateway;
 use Exception;
 
 class PaymentProviderFactory
@@ -49,6 +51,13 @@ class PaymentProviderFactory
                     $credentials['login'] ?? '',
                     $credentials['trans_key'] ?? '',
                     $credentials['secret_key'] ?? '',
+                    $credentials['environment'] ?? 'sandbox'
+                ),
+                $credentials
+            ),
+            'paguelofacil' => new PagueloFacilPaymentGateway(
+                new PagueloFacilClient(
+                    $credentials['CCLW'] ?? '',
                     $credentials['environment'] ?? 'sandbox'
                 ),
                 $credentials
