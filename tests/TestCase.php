@@ -31,30 +31,10 @@ class TestCase extends Orchestra
             'database' => ':memory:',
             'prefix' => '',
         ]);
-        
-        // Run package migrations
-        $migration1 = include __DIR__.'/../src/Database/migrations/2026_05_16_000001_create_billing_tables.php';
-        $migration1->up();
-        
-        $migration2 = include __DIR__.'/../src/Database/migrations/2026_05_16_000002_create_payments_tables.php';
-        $migration2->up();
-        
-        $migration3 = include __DIR__.'/../src/Database/migrations/2026_05_16_000003_create_ledger_entries_table.php';
-        $migration3->up();
-        
-        $migration4 = include __DIR__.'/../src/Database/migrations/2026_05_16_000004_create_webhook_calls_table.php';
-        $migration4->up();
-        
-        $migration5 = include __DIR__.'/../src/Database/migrations/2026_05_16_000005_create_additional_billing_tables.php';
-        $migration5->up();
-        
-        $migration6 = include __DIR__.'/../src/Database/migrations/2026_05_16_000006_create_additional_payments_tables.php';
-        $migration6->up();
+    }
 
-        $migration7 = include __DIR__.'/../src/Database/migrations/2026_05_16_000007_create_tenant_payment_providers_table.php';
-        $migration7->up();
-
-        $migration8 = include __DIR__.'/../src/Database/migrations/2026_05_16_134351_create_usage_snapshots_table.php';
-        $migration8->up();
+    protected function defineDatabaseMigrations()
+    {
+        $this->loadMigrationsFrom(__DIR__ . '/../src/Database/migrations');
     }
 }

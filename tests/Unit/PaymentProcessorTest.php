@@ -1,12 +1,28 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Plinth\MultiTenantBilling\Payments\Services\PaymentProcessor;
+
+uses(RefreshDatabase::class);
 use Plinth\MultiTenantBilling\Payments\Models\Customer;
 use Plinth\MultiTenantBilling\Payments\Models\Order;
 use Plinth\MultiTenantBilling\Core\Enums\TransactionStatus;
+use Plinth\MultiTenantBilling\Core\Models\TenantPaymentProvider;
 
 it('creates a payment correctly', function () {
+    TenantPaymentProvider::create([
+        'tenant_id' => 1,
+        'provider' => 'dlocal',
+        'credentials' => [
+            'login' => 'test',
+            'trans_key' => 'test',
+            'secret_key' => 'test',
+            'environment' => 'sandbox'
+        ],
+        'status' => 'active'
+    ]);
+
     Http::fake([
         'sandbox.dlocal.com/payments' => Http::response(['id' => 'tx_123', 'status' => 'PENDING'], 200)
     ]);

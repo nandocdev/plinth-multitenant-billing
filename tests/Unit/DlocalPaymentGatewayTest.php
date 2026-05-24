@@ -8,11 +8,11 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 
 it('verifies a valid dlocal webhook signature', function () {
-    $client = new DlocalClient('login', 'trans_key', 'secret_key', 'sandbox');
-    $gateway = new DlocalPaymentGateway($client);
+    $secret = 'secret_key';
+    $client = new DlocalClient('login', 'trans_key', $secret, 'sandbox');
+    $gateway = new DlocalPaymentGateway($client, ['secret_key' => $secret]);
 
     $payload = json_encode(['id' => 'tx_123', 'status' => 'PAID']);
-    $secret = 'secret_key';
     config(['dlocal.webhook_secret' => $secret]);
     
     $hash = hash_hmac('sha256', $payload, $secret);
