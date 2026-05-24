@@ -1,53 +1,92 @@
-# Laravel Multi-Tenant Billing (Plinth)
+# Plinth: Multi-Tenant Billing & Payment Orchestration
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/plinth/laravel-multitenant-billing.svg?style=flat-square)](https://packagist.org/packages/plinth/laravel-multitenant-billing)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A robust, provider-agnostic multi-tenant billing and payment orchestration framework for Laravel.
+**Plinth** is a high-performance billing engine for Laravel SaaS applications. It provides a provider-agnostic abstraction layer that handles multi-tenant subscriptions, one-time payments, atomic usage metering, and financial integrity via an internal ledger.
 
-## 🚀 Key Features
+## 🚀 Core Capabilities
 
-- **Provider Agnostic**: Easily switch between payment gateways (Stripe, dLocal, MercadoPago, etc.) without changing core logic.
-- **Billing vs. Payments Separation**: Clearly separates SaaS subscription logic (Billing) from customer checkout flows (Payments).
-- **Atomic Usage Metering**: Real-time tracking of resource consumption using Redis atomic counters to prevent race conditions.
-- **Quota Enforcement**: Hard and soft limit enforcement for multi-tenant environments.
-- **Entitlements Management**: Manage feature flags and plan-based access via high-performance Redis Sets.
-- **Internal Ledger & Snapshots**: Append-only financial source of truth with asynchronous database reconciliation for maximum resilience.
-- **Tenant-Aware**: Multi-tenancy support from day one, with per-tenant provider configurations.
-- **Async Webhooks**: Robust webhook processing with raw payload storage and queued execution.
+- **Dynamic Provider Switching**: Support Stripe and dLocal (extendable) out of the box. Each tenant can configure their own credentials.
+- **Financial Integrity (Ledger)**: Append-only ledger for all transactions, preventing data corruption and enabling easy auditing.
+- **Atomic Metering (Redis)**: High-performance usage tracking with atomic counters to prevent over-consumption in distributed systems.
+- **SaaS First**: Built-in support for Plans, Subscriptions, Invoices, Quotas, and Entitlements (Feature Flags).
+- **Store-First Webhooks**: Robust, multi-tenant webhook handling with cryptographic verification and queued processing.
+
+---
 
 ## 📦 Installation
-
-You can install the package via composer:
 
 ```bash
 composer require nandocdev/plinth-multitenant-billing
 ```
 
-> **Note**: If you are installing this package before its first stable release, you might need to use `composer require nandocdev/plinth-multitenant-billing:dev-main` or allow unstable packages in your `composer.json`.
+### 1. Register Service Provider
+(Laravel auto-discovery usually handles this, but if not:)
+Add `Plinth\MultiTenantBilling\BillingServiceProvider::class` to your `config/app.php`.
 
-## ⚙️ Configuration
-
-Publish the configuration file:
-
+### 2. Configuration & Migrations
 ```bash
 php artisan vendor:publish --tag="billing-config"
-```
-
-Publish and run the migrations:
-
-```bash
-php artisan vendor:publish --tag="billing-migrations"
 php artisan migrate
 ```
 
-> **Note**: This package requires **Redis** for real-time usage metering and quota enforcement.
+---
 
-## 🛠 Usage
+## 🛠 API Functionality
 
-### Usage Metering & Quotas
+### 1. Dynamic Payment Resolution
+Each tenant can have their own provider. You configure this in the `tenant_payment_providers` table.
 
-Track consumption and enforce limits atomically:
+```php
+use Plinth\MultiTenantBilling\Core\Models\TenantPaymentProvider;
+
+TenantPaymentProvider::create([
+    'tenant_id' => $tenant->id,
+    'provider' => 'stripe', // or 'dlocal'
+    'credentials' => [
+        'secret_key' => 'sk_test_...',
+        'webhook_secret' => 'whsec_...',
+    ],
+    'status' => 'active',
+]);
+```
+
+### 2. Payment Processing
+Use the `PaymentProcessor` to handle direct charges (B2C context).
+
+```php
+use Plinth\MultiTenantBilling\Payments\Services\PaymentProcessor;
+
+$processor = app(PaymentProcessor::class);
+
+// Direct charge using tokenized payment method
+$transaction = $processor->createPayin($order, [
+    'payment_method' => 'pm_card_visa', 
+]);
+
+echo $transaction->status; // PAID, PENDING, FAILED...
+```
+
+### 3. Hosted Checkout (Facade)
+For redirect-based flows (Checkout sessions).
+
+```php
+use Plinth\MultiTenantBilling\Facades\Billing;
+
+$session = Billing::checkout($tenant, [
+    'amount' => 5000,
+    'currency' => 'USD',
+    'customer_id' => $customer->id,
+    'success_url' => 'https://example.com/success',
+    'cancel_url' => 'https://example.com/cancel',
+]);
+
+return redirect($session['url']);
+```
+
+### 4. Usage Metering & Quotas
+Manage resource consumption atomically using Redis.
 
 ```php
 use Plinth\MultiTenantBilling\Billing\Quotas\QuotaEnforcer;
@@ -56,69 +95,73 @@ use Plinth\MultiTenantBilling\Billing\Exceptions\QuotaExceededException;
 $enforcer = app(QuotaEnforcer::class);
 
 try {
-    // Atomic check-and-consume
+    // Atomic check-and-consume (e.g., track 1 unit of 'api_calls')
     $enforcer->consume($tenant->id, 'api_calls', 1);
     
-    // Process your logic here...
+    // Logic here...
 } catch (QuotaExceededException $e) {
-    return response()->json(['error' => 'Quota exceeded'], 403);
+    return response()->json(['error' => 'API limit reached'], 403);
 }
 ```
 
-### Entitlements (Feature Flags)
-
-Check if a tenant has access to specific features:
+### 5. Entitlements (Feature Flags)
+Check plan-based feature access with $O(1)$ complexity via Redis Sets.
 
 ```php
 use Plinth\MultiTenantBilling\Billing\Entitlements\EntitlementManager;
 
-$entitlements = app(EntitlementManager::class);
+$manager = app(EntitlementManager::class);
 
-if ($entitlements->hasFeature($tenant->id, 'advanced_reports')) {
-    // Allow access to feature
+if ($manager->hasFeature($tenant->id, 'premium_support')) {
+    // Show premium features
 }
 ```
 
-### Payment Orchestration
+---
 
-Handle customer payments via provider-agnostic gateways:
+## ⚓ Webhook Integration
 
-```php
-use Plinth\MultiTenantBilling\Facades\Billing;
+Plinth uses unique endpoints per tenant and provider to ensure maximum security and isolation.
 
-// Create a customer payment session (Hosted Checkout)
-$checkout = Billing::checkout($tenant, [
-    'amount' => 1000,
-    'currency' => 'USD',
-    'customer_id' => $customer->id,
-]);
-```
+### Routes Configuration
+Endpoints follow this pattern: `/api/{provider}/webhooks/{tenant_id}`.
 
-### Internal Ledger
+**Example Webhook Setup:**
+- **Stripe**: `https://your-api.com/api/stripe/webhooks/1`
+- **dLocal**: `https://your-api.com/api/dlocal/webhooks/1`
 
-Access the append-only financial source of truth for auditing and reconciliation:
+The `WebhookController` handles:
+1. **Signature Verification**: Validates the payload cryptographically using the specific tenant's secret.
+2. **Store-First Persistence**: Saves the raw payload in `webhook_calls`.
+3. **Async Processing**: Dispatches `ProcessWebhookJob` for status normalization and ledger recording.
 
-```php
-use Plinth\MultiTenantBilling\Core\Models\LedgerEntry;
+---
 
-$balance = LedgerEntry::where('tenant_id', $tenant->id)->sum('amount');
-```
+## 📊 Domain Models Reference
+
+| Category | Models |
+| :--- | :--- |
+| **Billing** | `Plan`, `Subscription`, `SubscriptionItem`, `Invoice`, `InvoiceLine`, `BillingAttempt` |
+| **Payments** | `Customer`, `Order`, `Transaction`, `PaymentMethod`, `Refund`, `Dispute` |
+| **Core** | `LedgerEntry`, `TenantPaymentProvider`, `WebhookCall`, `UsageSnapshot` |
+
+---
 
 ## 🧪 Testing
 
-The package uses [Pest](https://pestphp.com/) for testing.
+The package includes a full suite of Pest tests. 
 
 ```bash
 vendor/bin/pest
 ```
 
-## 🤝 Contributing
+For package development, Plinth utilizes `orchestra/testbench` to simulate the Laravel environment and provides a pre-configured `TestCase` with in-memory SQLite migrations.
 
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
+---
 
 ## 📜 License
 
 The MIT License (MIT). Please see [License File](LICENSE) for more information.
 
 ---
-Developed by [Fernando Castillo (@nandocdev)](https://github.com/nandocdev)
+Developed with ❤️ by [Fernando Castillo (@nandocdev)](https://github.com/nandocdev)

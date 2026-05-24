@@ -37,11 +37,13 @@ Manages the relationship between the **Tenant** and their **End Customers**.
 
 ## 4. Technical Architecture
 
-### 4.1 Abstraction Layer
-The `PaymentProvider` interface abstracts complex flows into standardized methods:
-- `createCheckout()`: For hosted payment pages.
-- `processPayment()`: For direct server-to-server charges.
-- `verifyWebhook()`: Cryptographic validation of provider events.
+### 4.1 Abstraction Layer & Dynamic Resolution
+The system utilizes a **Factory Pattern** for dynamic provider resolution:
+- **PaymentProviderFactory**: Resolves the correct gateway (`StripePaymentGateway`, `DlocalPaymentGateway`) at runtime by fetching tenant-specific credentials from the `TenantPaymentProvider` model.
+- **Contracts**: The `PaymentProvider` and `BillingProvider` interfaces abstract complex flows into standardized methods:
+    - `createCheckout()`: For hosted payment pages.
+    - `processPayment()`: For direct server-to-server charges.
+    - `verifyWebhook()`: Cryptographic validation of provider events.
 
 ### 4.2 Usage & Quota Engine
 Implemented via a high-performance Redis-backed strategy:
