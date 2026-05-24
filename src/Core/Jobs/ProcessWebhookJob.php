@@ -22,10 +22,10 @@ class ProcessWebhookJob implements ShouldQueue
         try {
             $payload = $this->webhookCall->payload;
             $status = $payload['status'] ?? null;
-            $transactionId = $payload['id'] ?? null;
+            $providerTransactionId = $payload['id'] ?? null;
 
-            if ($transactionId && $status) {
-                $transactionService->handleWebhook($transactionId, $status, $payload);
+            if ($providerTransactionId && $status) {
+                $transactionService->handleWebhook($providerTransactionId, $status, $payload);
             }
 
             $this->webhookCall->update([

@@ -7,6 +7,8 @@ use Plinth\MultiTenantBilling\Payments\Models\Transaction;
 use Plinth\MultiTenantBilling\Core\Models\LedgerEntry;
 use Plinth\MultiTenantBilling\Core\Enums\TransactionStatus;
 
+use Plinth\MultiTenantBilling\Core\Models\TenantPaymentProvider;
+
 class TransactionService
 {
     /**
@@ -16,15 +18,15 @@ class TransactionService
      * - Actualiza el modelo Transaction
      * - Crea un registro append-only en LedgerEntry
      */
-    public function handleWebhook(string $providerId, string $status, array $payload): void
+    public function handleWebhook(string $providerTransactionId, string $status, array $payload): void
     {
         $statusEnum = TransactionStatus::tryFrom($status);
         if (!$statusEnum) {
             return;
         }
 
-        DB::transaction(function () use ($providerId, $statusEnum, $payload) {
-            $transaction = Transaction::where('provider_id', $providerId)->lockForUpdate()->first();
+        DB::transaction(function () use ($providerTransactionId, $statusEnum, $payload) {
+            $transaction = Transaction::where('provider_id', $providerTransactionId)->lockForUpdate()->first();
             
             if (!$transaction) {
                 return;
@@ -41,27 +43,22 @@ class TransactionService
             ]);
 
             // Append-only Ledger para fuente de verdad
-            if ($statusEnum === TransactionStatus::PAID) {
+            if (in_array($statusEnum, [TransactionStatus::PAID, TransactionStatus::REFUNDED, TransactionStatus::CHARGEBACK])) {
+                $providerName = TenantPaymentProvider::where('tenant_id', $transaction->tenant_id)
+                    ->where('status', 'active')
+                    ->value('provider') ?? 'Gateway';
+
+                $type = $statusEnum === TransactionStatus::PAID ? 'CREDIT' : 'DEBIT';
+                $verb = $statusEnum === TransactionStatus::PAID ? 'received' : $statusEnum->value;
+
                 LedgerEntry::create([
                     'tenant_id' => $transaction->tenant_id,
-                    'type' => 'CREDIT',
+                    'type' => $type,
                     'amount' => $transaction->amount,
                     'currency' => $transaction->currency,
                     'reference_type' => Transaction::class,
                     'reference_id' => $transaction->id,
-                    'description' => 'Payment received via dLocal'
-                ]);
-            }
-            
-            if (in_array($statusEnum, [TransactionStatus::REFUNDED, TransactionStatus::CHARGEBACK])) {
-                LedgerEntry::create([
-                    'tenant_id' => $transaction->tenant_id,
-                    'type' => 'DEBIT',
-                    'amount' => $transaction->amount,
-                    'currency' => $transaction->currency,
-                    'reference_type' => Transaction::class,
-                    'reference_id' => $transaction->id,
-                    'description' => "Payment {$statusEnum->value} via dLocal"
+                    'description' => "Payment {$verb} via " . ucfirst($providerName)
                 ]);
             }
         });

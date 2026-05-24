@@ -13,17 +13,17 @@ class PaymentProcessor
     public function createPayin(Order $order, array $paymentMethodData)
     {
         $provider = $this->factory->makePaymentProvider($order->tenant_id);
-
+        
         $idempotencyKey = 'order_payin_' . $order->id;
         $response = $provider->processPayment($order, $paymentMethodData, $idempotencyKey);
-
+            
         return Transaction::create([
             'tenant_id' => $order->tenant_id,
             'order_id' => $order->id,
             'provider_id' => $response['transaction_id'],
             'amount' => $order->amount,
             'currency' => $order->currency,
-            'country' => 'US', // default
+            'country' => $order->country ?? 'US',
             'status' => $response['status']
         ]);
     }
